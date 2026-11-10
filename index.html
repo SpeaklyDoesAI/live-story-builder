@@ -141,7 +141,9 @@ const STEPS = [
 ];
 
 let step = 0;
-let sample = null, dict = null, micTarget = null, micBtn = null, aborter = null;
+let micTarget = null, micBtn = null, rec = null, aborter = null;
+const STORY_URL = "https://yrmrrcehldvdhpespqec.supabase.co/functions/v1/live-story-writer";
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 const MONEY = /\b(commission|commissions|paycheck|payout|get paid|getting paid|my income|make bank|so i can make|i can make|for me to make|get rich)\b/i;
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -207,7 +209,7 @@ function makeHTML(){
   if (!A.status) missing.push("where you are today (step 5)");
   if (!A.person && !A.wish) missing.push("who you want to help (step 6)");
   return `<h2>Make your story</h2>
-    <p class="help">${sample ? "We’ll write a first draft from your answers. Then make it sound like you." : "We’ll build a first draft from your answers. Then make it sound like you."}</p>
+    <p class="help">We’ll write a first draft from your answers. Then make it sound like you.</p>
     ${missing.length ? `<div class="warn">Before you make your story, add ${missing.join(", ")}.</div>` : ""}
     <label class="check"><input type="checkbox" id="honest" ${A.honest?"checked":""}><span>Everything I wrote really happened to me. I won’t add things that aren’t true.</span></label>
     <div class="actions">
@@ -248,7 +250,7 @@ function wire(s){
     });
   });
   document.querySelectorAll("[data-mic]").forEach(b => {
-    if (dict) { b.hidden = false; b.onclick = () => toggleMic(b, document.getElementById("f_"+b.dataset.mic)); }
+    if (SpeechRec) { b.hidden = false; b.onclick = () => toggleMic(b, document.getElementById("f_"+b.dataset.mic)); }
   });
   if (s.id === "why") checkMoney();
   if (s.id === "make") wireMake();
@@ -265,40 +267,43 @@ function toggleMic(btn, ta){
   stopMic();
   micBtn = btn; micTarget = ta;
   btn.classList.add("on"); btn.textContent = "Stop";
-  dict.start().catch(() => { resetMic(); });
+  const r = rec = new SpeechRec();
+  r.continuous = true;
+  r.onresult = ev => {
+    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      const text = ev.results[i].isFinal && ev.results[i][0].transcript;
+      if (!text) continue;
+      ta.value = (ta.value ? ta.value.trimEnd() + " " : "") + text.trim();
+      ta.dispatchEvent(new Event("input"));
+    }
+  };
+  r.onend = () => { if (rec === r) { rec = null; resetMic(); } };
+  try { r.start(); } catch(e) { rec = null; resetMic(); }
 }
 function resetMic(){ if (micBtn){ micBtn.classList.remove("on"); micBtn.textContent = "Speak"; } micBtn = null; micTarget = null; }
-function stopMic(){ if (dict && micBtn) { dict.stop().catch(()=>{}); } resetMic(); }
+function stopMic(){ if (rec) { try { rec.stop(); } catch(e){} rec = null; } resetMic(); }
 
 /* ---------- Story ---------- */
-function prompt(){
-  const a = { ...A }; delete a.story; delete a.honest; delete a.who;
-  return `You are helping a real person write a short, TRUE personal story they will tell out loud on a TikTok Live. They are on the team at Creative Owners Club, a community that shows everyday people (often renters, people with bad or no credit, ages 40 to 65) how to buy houses with little or no money down and no credit needed, or how to make money with this process.
-
-Right BEFORE this story, they just finished a segment showing viewers how to search Zillow to find houses and sellers who are eager to sell. Right after this story, they will read a member invite script that begins with: "So, since I'm so interested in owning houses, I decided to research how to learn more about it." Do NOT write that line. End the story so it flows naturally into it.
-
-THEIR ANSWERS (JSON):
-${JSON.stringify(a, null, 2)}
-
-WRITE THE STORY WITH THESE RULES:
-1. Length: 500 to 650 words, so it takes 3 to 5 minutes to say out loud.
-2. 2nd grade reading level. Short sentences. Simple words. Write how people talk, not how they write.
-3. First person, in their voice. Casual and warm. Like a friend talking.
-4. Use ONLY the facts in their answers. Never invent events, people, numbers, places, or results. If a detail would help but is missing, write a short placeholder in square brackets, like [what your landlord said]. Use at most 3 placeholders.
-5. Structure, in this order:
-   a. A smooth bridge out of the Zillow segment, 2 to 4 sentences. Start by wrapping up the Zillow lesson they just taught (finding houses and sellers who really want to sell) and connect it to their own life, using "zillow_feel" if given (how it felt to look at houses back then). Do not repeat or add any Zillow how-to steps. Then say who they are now.
-   b. Life back then. Real numbers if they gave them.
-   c. THE MOMENT: slow down here. Paint the one scene so viewers can see it. Use their exact words from scene_words if given. This should be the longest part.
-   d. What they believed about themselves back then. Say it plainly, so viewers who believe the same thing feel seen.
-   e. The turn (required): how they found out people can buy houses with little or no money down, even with bad or no credit, and how they and their team decided to share it with everyday people through their community. Speak with ownership and confidence about the community: "my team and I," "our community." Stay strictly honest to "status" about their own results. If they are still learning or working on their first deal, do NOT say or hint that they bought a house.
-   f. Their why: helping people who want to buy a house (their first, or more than one) or who want to make money with this process, like the person they described. Their own reason must be about people and family, never about money for themselves or commissions.
-   g. A closing line or two that sets up wanting to share what they learned with others.
-6. Add exactly 2 chat moments on their own lines, worded like: "Type a 1 in the chat if you've ever felt that way." Put one right after the moment and one after the belief.
-7. You may add (pause) on its own line once, right after the hardest line.
-8. Do not promise results, income, or timelines to viewers. No guru talk. No hype words.
-9. Never say "creative financing," "subject-to," "seller financing," or any real estate jargon. Describe what the community teaches only as buying houses with little or no money down and no credit needed, or making money with this process.
-10. Never use em dashes or en dashes. Use periods or commas instead.
-11. Output ONLY the story text with blank lines between paragraphs. No title, no headings, no notes.`;
+async function streamStory(answers, { signal, onText }){
+  const a = { ...answers }; delete a.story; delete a.honest; delete a.who;
+  const res = await fetch(STORY_URL, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ answers: a }), signal
+  });
+  if (!res.ok || !res.body) { const e = new Error("HTTP " + res.status); e.code = res.status === 429 ? "rate_limited" : "http_error"; throw e; }
+  const reader = res.body.getReader(), dec = new TextDecoder();
+  let text = "";
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      text += dec.decode(value, { stream: true });
+      onText({ text });
+    }
+  } catch(err) {
+    const e = new Error("Stream failed"); e.code = signal.aborted ? "aborted" : "stream_error"; e.text = text; throw e;
+  }
+  return { text };
 }
 
 function clean(t){ return t.replace(/\s*[—–]\s*/g, ", ").replace(/,\s*,/g, ","); }
@@ -375,13 +380,12 @@ function useTemplate(msg){
 async function generate(){
   const gen = document.getElementById("gen"), stop = document.getElementById("stop");
   const story = document.getElementById("story"), out = document.getElementById("out");
-  if (!sample) { useTemplate("Here’s a first draft built from your answers. Now edit it so it sounds like you. Fill in anything in [brackets]."); return; }
   gen.disabled = true; stop.hidden = false; out.hidden = false;
   story.value = ""; setStatus("Thinking about your story. This can take up to a minute…");
   aborter = new AbortController();
   try {
-    const { text } = await sample(prompt(), {
-      signal: aborter.signal, cache: false,
+    const { text } = await streamStory(A, {
+      signal: aborter.signal,
       onText: ({text}) => { story.value = clean(text); setStatus("Writing…"); stats(); }
     });
     A.story = clean(text).trim(); story.value = A.story; save(); stats();
@@ -389,7 +393,6 @@ async function generate(){
   } catch(e) {
     if (e && e.text) { A.story = clean(e.text); story.value = A.story; save(); stats(); }
     if (e?.code === "aborted" || aborter.signal.aborted) setStatus("Stopped. You can edit what’s there or write a new version.");
-    else if (e?.code === "not_granted") { sample = null; useTemplate("AI writing is off, so here’s a draft built from your answers. Edit it to sound like you."); }
     else if (e?.code === "rate_limited") setStatus("Too many requests right now. Wait a minute, then try again.");
     else useTemplate("The AI writer didn’t finish, so here’s a draft built from your answers. Edit it to sound like you.");
   } finally {
@@ -398,23 +401,6 @@ async function generate(){
 }
 
 render();
-
-(async () => {
-  if (!window.claude || !window.claude.use) return;
-  try {
-    const [s, d] = await Promise.all([claude.use("sample"), claude.use("dictation")]);
-    sample = s || null; dict = d || null;
-    if (dict) {
-      dict.onFinal(({text}) => {
-        if (!micTarget || !text) return;
-        micTarget.value = (micTarget.value ? micTarget.value.trimEnd() + " " : "") + text.trim();
-        micTarget.dispatchEvent(new Event("input"));
-      });
-      dict.onState(({state}) => { if (state === "idle") resetMic(); });
-    }
-    if (STEPS[step].id !== "start") render();
-  } catch(e) {}
-})();
 </script>
 </body>
 </html>
