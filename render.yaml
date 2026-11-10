@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: live-story-builder
+    runtime: static
+    plan: free
+    buildCommand: ""
+    staticPublishPath: .

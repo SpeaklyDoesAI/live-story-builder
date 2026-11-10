@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Your Live Story Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Literata:opsz,wght@7..72,400;7..72,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --page:#EDF1F6; --surface:#FFFFFF; --ink:#1B2333; --muted:#566074;
+  --line:#D5DCE6; --gold:#E3A008; --gold-soft:#FDF3D7; --act:#1F5F5B; --act-ink:#FFFFFF;
+  --warn-bg:#FFF4E5; --warn-ink:#7A4B00; --chip:#F3F6FA;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#121722; --surface:#1A2130; --ink:#E9EDF4; --muted:#A3ADBF;
+    --line:#2E3849; --gold:#F2B73A; --gold-soft:#3A3018; --act:#4FA79F; --act-ink:#0E1A19;
+    --warn-bg:#3A2A10; --warn-ink:#FFD58A; --chip:#222B3C; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#121722; --surface:#1A2130; --ink:#E9EDF4; --muted:#A3ADBF;
+  --line:#2E3849; --gold:#F2B73A; --gold-soft:#3A3018; --act:#4FA79F; --act-ink:#0E1A19;
+  --warn-bg:#3A2A10; --warn-ink:#FFD58A; --chip:#222B3C; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--page);color:var(--ink);
+  font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:18px;line-height:1.55}
+.wrap{max-width:720px;margin:0 auto;padding:28px 20px 80px}
+.progress{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+.bar{flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar span{display:block;height:100%;background:var(--gold);width:0;transition:width .3s}
+.stepnum{font-size:15px;color:var(--muted);white-space:nowrap}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:30px 28px}
+h1{font-family:Literata,Georgia,serif;font-weight:600;font-size:clamp(28px,5vw,40px);line-height:1.18;margin:0 0 18px;letter-spacing:-.01em}
+h2{font-family:Literata,Georgia,serif;font-weight:600;font-size:28px;line-height:1.25;margin:0 0 8px}
+.help{color:var(--muted);margin:0 0 24px}
+.lead{font-size:20px;margin:0 0 14px}
+.rules{margin:22px 0 4px;padding:18px 20px;background:var(--gold-soft);border-radius:10px}
+.rules p{margin:0 0 8px}.rules p:last-child{margin:0}
+.field{margin:0 0 24px}
+label.q{display:block;font-weight:700;margin-bottom:4px}
+.hint{display:block;font-size:15px;color:var(--muted);margin-bottom:8px}
+input[type=text],textarea,select{width:100%;font:inherit;color:var(--ink);background:var(--page);
+  border:1.5px solid var(--line);border-radius:10px;padding:12px 14px}
+textarea{min-height:96px;resize:vertical}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--act);box-shadow:0 0 0 3px color-mix(in srgb,var(--act) 25%,transparent)}
+.inrow{position:relative}
+.mic{position:absolute;right:8px;bottom:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  border-radius:999px;font:inherit;font-size:14px;padding:4px 12px;cursor:pointer}
+.mic.on{background:var(--gold);color:#1B2333;border-color:var(--gold)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:16px;border:1.5px solid var(--line);background:var(--chip);color:var(--ink);
+  border-radius:999px;padding:8px 14px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--act);color:var(--act-ink);border-color:var(--act)}
+.nav{display:flex;justify-content:space-between;gap:12px;margin-top:28px}
+button.btn{font:inherit;font-weight:700;border-radius:10px;padding:13px 22px;cursor:pointer;border:1.5px solid var(--act)}
+.primary{background:var(--act);color:var(--act-ink)}
+.ghost{background:transparent;color:var(--act)}
+button:disabled{opacity:.5;cursor:not-allowed}
+button:focus-visible,.chip:focus-visible,.mic:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.warn{background:var(--warn-bg);color:var(--warn-ink);border-radius:10px;padding:12px 16px;margin:0 0 20px;font-size:16px}
+.check{display:flex;gap:12px;align-items:flex-start;margin:6px 0 22px}
+.check input{width:22px;height:22px;margin-top:3px;accent-color:var(--act)}
+.story{font-family:Literata,Georgia,serif;font-size:19px;line-height:1.7;min-height:420px;background:var(--surface)}
+.stats{color:var(--muted);font-size:15px;margin:8px 0 18px}
+.actions{display:flex;flex-wrap:wrap;gap:10px}
+.next{margin-top:26px;padding-top:22px;border-top:1px solid var(--line)}
+.next h3{font-size:18px;margin:0 0 8px}
+.next ol{margin:0;padding-left:22px}.next li{margin-bottom:6px}
+.status{font-size:16px;color:var(--muted);margin:12px 0 0;min-height:1.4em}
+@media (max-width:520px){.card{padding:22px 18px}.wrap{padding:18px 14px 60px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="progress" aria-hidden="false">
+    <div class="bar"><span id="bar"></span></div>
+    <div class="stepnum" id="stepnum"></div>
+  </div>
+  <section class="card" id="card" aria-live="polite"></section>
+</main>
+
+<script>
+const STORE = "cocStoryBuilder.v1";
+let A = {};
+try { A = JSON.parse(localStorage.getItem(STORE) || "{}") || {}; } catch(e) { A = {}; }
+function save(){ try { localStorage.setItem(STORE, JSON.stringify(A)); } catch(e){} }
+
+const STEPS = [
+  { id:"start" },
+  { id:"now", title:"Who you are today", help:"Start simple. This is how you’ll introduce yourself.",
+    fields:[
+      {k:"name",type:"text",label:"Your first name"},
+      {k:"now",type:"text",label:"What do you do now?",ph:"Mom of 3, nurse, truck driver, retired teacher…"},
+      {k:"from",type:"text",label:"Where are you from? (optional)",ph:"Grew up in Detroit, live in Orlando now"}
+    ]},
+  { id:"before", title:"Life back then", help:"Think about the hardest season of your life. Not a bad day. A bad season.",
+    fields:[
+      {k:"when",type:"text",label:"When was it?",ph:"2019, when I was 34"},
+      {k:"home",type:"select",label:"Where were you living?",options:["Renting","Living with family","Staying with friends","Living in my car or a shelter","I owned a house, but it was hurting me","Something else"]},
+      {k:"money",type:"textarea",label:"What was money like?",hint:"Use real numbers if you remember them. Numbers make people lean in.",ph:"After rent I had about $40 left. Every month I picked which bill to skip."},
+      {k:"family",type:"textarea",label:"Who was counting on you?",ph:"My two boys. My mom lived with us too."},
+      {k:"zillow_feel",type:"textarea",label:"Back then, how did it feel to look at houses for sale?",hint:"On Zillow, online, or driving by. This helps your story start right where your Zillow lesson ends.",ph:"I used to scroll Zillow at night, then close the app. It felt like looking through a store window at something I could never have."}
+    ]},
+  { id:"moment", title:"Find your moment", help:"Every strong story has one scene people can see in their head. Tap what really happened to you. Then pick the one that still hurts to remember.",
+    fields:[
+      {k:"sparks",type:"chips",label:"Which of these happened to you?",options:["The bank said no","Rent went up again","I got an eviction notice","I had to move my kids again","I counted change for groceries","I hid bills I couldn’t pay","My car got taken","I moved back in with family","I couldn’t give my kids something they needed","Someone made me feel small"]},
+      {k:"sparks_other",type:"textarea",label:"None of these? Write what happened to you",ph:"My power got shut off on my son’s birthday."},
+      {k:"scene_where",type:"textarea",label:"Where were you when it hit you the hardest?",ph:"Sitting in my car in the Walmart parking lot, crying so my kids wouldn’t see."},
+      {k:"scene_what",type:"textarea",label:"What happened, step by step?",hint:"Tell it like you’re telling a friend over coffee.",ph:"The landlord taped a letter to the door. Rent was going up $300. I already couldn’t pay it."},
+      {k:"scene_senses",type:"textarea",label:"What did you see or hear?",ph:"My daughter asked, “Mommy, are we moving again?”"},
+      {k:"scene_words",type:"textarea",label:"What did you say, out loud or in your head?",ph:"“I’m failing my kids.”"}
+    ]},
+  { id:"belief", title:"What you believed", help:"Your viewers believe the same thing right now. When they hear you say it, they feel seen.",
+    fields:[
+      {k:"beliefs",type:"chips",label:"Tap any that were true for you",options:["People like me don’t own homes","My credit is too bad","I’m not smart enough for this","It’s too late for me","I’m letting my family down","I’ll rent forever"]},
+      {k:"belief_own",type:"textarea",label:"Now say it in your own words",ph:"I really thought owning a home was for other people. Not people like me."}
+    ]},
+  { id:"turn", title:"What changed", help:"This is where you found out people can buy houses with little or no money down, even with bad credit or no credit. And it’s where you and your team decided to share it through your community. Talk about it like it’s yours: “my team and I,” “our community.”",
+    fields:[
+      {k:"turn",type:"textarea",label:"What was the turning point? (required)",hint:"Tell how you found out about this, and why you and your team decided to share your community with people like you.",ph:"I found out you could buy a house with little or no money down, even with bad credit. I was mad nobody ever told me. So my team and I decided to share it with everyday people through our community."},
+      {k:"status",type:"select",label:"Where are you today? Be honest.",options:["I bought a home with little or no money down","I’m under contract or closing on a deal","I’m learning and working on my first deal","I own a home and I’m working on buying more","I’m making money with this process"]},
+      {k:"proof",type:"textarea",label:"Any real details you can share? (optional)",ph:"Closed in March. 3 bedroom house. My payment is less than my old rent."}
+    ]},
+  { id:"why", title:"Your why", help:"You help two kinds of people. People who want to buy a house (their first one, or more than one). And people who want to make money with this process. Your reason for helping them has to be about them, not about money for you.",
+    fields:[
+      {k:"person",type:"textarea",label:"Picture one real person who wants to buy a house or make money with this. Who are they?",hint:"Someone who wants their first home, someone who wants more than one, or someone who wants to make money with this process.",ph:"My cousin Tasha. Two kids, works two jobs, and thinks she’ll rent forever."},
+      {k:"wish",type:"textarea",label:"What do you wish someone had told you back then?",ph:"That bad credit doesn’t mean you can’t own a home."}
+    ]},
+  { id:"make" }
+];
+
+let step = 0;
+let sample = null, dict = null, micTarget = null, micBtn = null, aborter = null;
+
+const MONEY = /\b(commission|commissions|paycheck|payout|get paid|getting paid|my income|make bank|so i can make|i can make|for me to make|get rich)\b/i;
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function render(){
+  const s = STEPS[step];
+  document.getElementById("bar").style.width = (step/(STEPS.length-1))*100 + "%";
+  document.getElementById("stepnum").textContent = step===0 ? "Takes about 15 minutes" : `Step ${step} of ${STEPS.length-1}`;
+  const card = document.getElementById("card");
+  stopMic();
+  if (s.id === "start") card.innerHTML = startHTML();
+  else if (s.id === "make") card.innerHTML = makeHTML();
+  else card.innerHTML = stepHTML(s);
+  wire(s);
+  window.scrollTo({top:0});
+}
+
+function startHTML(){
+  return `
+  <h1>Every great live has one moment where a viewer thinks, “That was me.”</h1>
+  <p class="lead">This tool helps you find that moment in your own life and turn it into a 3 to 5 minute story.</p>
+  <p class="help">You’ll tell it right after your Zillow lesson and right before the member invite. It shows people you’re not a guru. You’re a regular person who was stuck, just like them.</p>
+  <div class="rules">
+    <p><strong>Three rules for your story</strong></p>
+    <p>It has to be true. Only real things that happened to you.</p>
+    <p>Go to the hard part. The rough moment is what people remember.</p>
+    <p>Your why is about helping people. Never about money.</p>
+  </div>
+  <p class="help" style="margin-top:18px">Your answers save on this device as you go, so you can come back later.</p>
+  <div class="nav"><span></span><button class="btn primary" data-go="1">Start my story</button></div>`;
+}
+
+function fieldHTML(f){
+  const v = A[f.k];
+  const hint = f.hint ? `<span class="hint">${esc(f.hint)}</span>` : "";
+  if (f.type === "text") return `<div class="field"><label class="q" for="f_${f.k}">${esc(f.label)}</label>${hint}
+    <input type="text" id="f_${f.k}" data-k="${f.k}" value="${esc(v)}" placeholder="${esc(f.ph||"")}"></div>`;
+  if (f.type === "textarea") return `<div class="field"><label class="q" for="f_${f.k}">${esc(f.label)}</label>${hint}
+    <div class="inrow"><textarea id="f_${f.k}" data-k="${f.k}" placeholder="${esc(f.ph||"")}">${esc(v)}</textarea>
+    <button type="button" class="mic" data-mic="${f.k}" hidden aria-label="Speak your answer">Speak</button></div></div>`;
+  if (f.type === "select") return `<div class="field"><label class="q" for="f_${f.k}">${esc(f.label)}</label>${hint}
+    <select id="f_${f.k}" data-k="${f.k}"><option value="">Choose one</option>${f.options.map(o=>`<option ${v===o?"selected":""}>${esc(o)}</option>`).join("")}</select></div>`;
+  if (f.type === "chips"){
+    const sel = Array.isArray(v) ? v : [];
+    return `<div class="field"><span class="q" style="display:block;font-weight:700;margin-bottom:8px">${esc(f.label)}</span>
+      <div class="chips" data-chips="${f.k}">${f.options.map(o=>`<button type="button" class="chip" aria-pressed="${sel.includes(o)}" data-val="${esc(o)}">${esc(o)}</button>`).join("")}</div></div>`;
+  }
+}
+
+function stepHTML(s){
+  return `<h2>${esc(s.title)}</h2><p class="help">${esc(s.help)}</p>
+    ${s.id==="why" ? `<div class="warn" id="moneywarn" hidden>Heads up: it sounds like your why is about money for you. Viewers can feel that, and it breaks trust. Make it about the people you want to help.</div>` : ""}
+    ${s.fields.map(fieldHTML).join("")}
+    <div class="nav"><button class="btn ghost" data-go="${step-1}">Back</button><button class="btn primary" data-go="${step+1}">Next</button></div>`;
+}
+
+function makeHTML(){
+  const ready = A.name && A.scene_what && A.turn && (A.person || A.wish) && A.status;
+  const missing = [];
+  if (!A.name) missing.push("your first name (step 1)");
+  if (!A.scene_what) missing.push("what happened in your moment (step 3)");
+  if (!A.turn) missing.push("your turning point (step 5)");
+  if (!A.status) missing.push("where you are today (step 5)");
+  if (!A.person && !A.wish) missing.push("who you want to help (step 6)");
+  return `<h2>Make your story</h2>
+    <p class="help">${sample ? "We’ll write a first draft from your answers. Then make it sound like you." : "We’ll build a first draft from your answers. Then make it sound like you."}</p>
+    ${missing.length ? `<div class="warn">Before you make your story, add ${missing.join(", ")}.</div>` : ""}
+    <label class="check"><input type="checkbox" id="honest" ${A.honest?"checked":""}><span>Everything I wrote really happened to me. I won’t add things that aren’t true.</span></label>
+    <div class="actions">
+      <button class="btn ghost" data-go="${step-1}">Back</button>
+      <button class="btn primary" id="gen" ${ready && A.honest ? "" : "disabled"}>${A.story ? "Write a new version" : "Write my story"}</button>
+      <button class="btn ghost" id="stop" hidden>Stop</button>
+    </div>
+    <p class="status" id="status"></p>
+    <div id="out" ${A.story ? "" : "hidden"}>
+      <label class="q" for="story" style="margin-top:16px">Your story (edit anything)</label>
+      <div class="inrow"><textarea class="story" id="story">${esc(A.story)}</textarea></div>
+      <div class="stats" id="stats"></div>
+      <div class="actions"><button class="btn primary" id="copy">Copy story</button></div>
+      <div class="next">
+        <h3>Telling it on your live</h3>
+        <ol>
+          <li>You have to memorize it. Practice out loud until you can tell it without looking at anything. Reading it on a live kills the feeling.</li>
+          <li>Slow down at your hardest moment. A pause there is powerful.</li>
+          <li>When you finish, go straight into the member invite. Start with: “So, since I’m so interested in owning houses, I decided to research how to learn more about it.”</li>
+        </ol>
+      </div>
+    </div>`;
+}
+
+function wire(s){
+  document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => { step = Math.max(0, Math.min(STEPS.length-1, +b.dataset.go)); render(); });
+  document.querySelectorAll("[data-k]").forEach(el => {
+    const ev = el.tagName === "SELECT" ? "change" : "input";
+    el.addEventListener(ev, () => { A[el.dataset.k] = el.value; save(); if (s.id==="why") checkMoney(); });
+  });
+  document.querySelectorAll("[data-chips]").forEach(g => {
+    g.querySelectorAll(".chip").forEach(c => c.onclick = () => {
+      const k = g.dataset.chips; const arr = Array.isArray(A[k]) ? A[k] : [];
+      const on = c.getAttribute("aria-pressed") !== "true";
+      c.setAttribute("aria-pressed", on);
+      A[k] = on ? [...arr, c.dataset.val] : arr.filter(x => x !== c.dataset.val);
+      save();
+    });
+  });
+  document.querySelectorAll("[data-mic]").forEach(b => {
+    if (dict) { b.hidden = false; b.onclick = () => toggleMic(b, document.getElementById("f_"+b.dataset.mic)); }
+  });
+  if (s.id === "why") checkMoney();
+  if (s.id === "make") wireMake();
+}
+
+function checkMoney(){
+  const w = document.getElementById("moneywarn");
+  if (w) w.hidden = !MONEY.test((A.person||"") + " " + (A.wish||""));
+}
+
+/* ---------- Dictation ---------- */
+function toggleMic(btn, ta){
+  if (micBtn === btn) { stopMic(); return; }
+  stopMic();
+  micBtn = btn; micTarget = ta;
+  btn.classList.add("on"); btn.textContent = "Stop";
+  dict.start().catch(() => { resetMic(); });
+}
+function resetMic(){ if (micBtn){ micBtn.classList.remove("on"); micBtn.textContent = "Speak"; } micBtn = null; micTarget = null; }
+function stopMic(){ if (dict && micBtn) { dict.stop().catch(()=>{}); } resetMic(); }
+
+/* ---------- Story ---------- */
+function prompt(){
+  const a = { ...A }; delete a.story; delete a.honest; delete a.who;
+  return `You are helping a real person write a short, TRUE personal story they will tell out loud on a TikTok Live. They are on the team at Creative Owners Club, a community that shows everyday people (often renters, people with bad or no credit, ages 40 to 65) how to buy houses with little or no money down and no credit needed, or how to make money with this process.
+
+Right BEFORE this story, they just finished a segment showing viewers how to search Zillow to find houses and sellers who are eager to sell. Right after this story, they will read a member invite script that begins with: "So, since I'm so interested in owning houses, I decided to research how to learn more about it." Do NOT write that line. End the story so it flows naturally into it.
+
+THEIR ANSWERS (JSON):
+${JSON.stringify(a, null, 2)}
+
+WRITE THE STORY WITH THESE RULES:
+1. Length: 500 to 650 words, so it takes 3 to 5 minutes to say out loud.
+2. 2nd grade reading level. Short sentences. Simple words. Write how people talk, not how they write.
+3. First person, in their voice. Casual and warm. Like a friend talking.
+4. Use ONLY the facts in their answers. Never invent events, people, numbers, places, or results. If a detail would help but is missing, write a short placeholder in square brackets, like [what your landlord said]. Use at most 3 placeholders.
+5. Structure, in this order:
+   a. A smooth bridge out of the Zillow segment, 2 to 4 sentences. Start by wrapping up the Zillow lesson they just taught (finding houses and sellers who really want to sell) and connect it to their own life, using "zillow_feel" if given (how it felt to look at houses back then). Do not repeat or add any Zillow how-to steps. Then say who they are now.
+   b. Life back then. Real numbers if they gave them.
+   c. THE MOMENT: slow down here. Paint the one scene so viewers can see it. Use their exact words from scene_words if given. This should be the longest part.
+   d. What they believed about themselves back then. Say it plainly, so viewers who believe the same thing feel seen.
+   e. The turn (required): how they found out people can buy houses with little or no money down, even with bad or no credit, and how they and their team decided to share it with everyday people through their community. Speak with ownership and confidence about the community: "my team and I," "our community." Stay strictly honest to "status" about their own results. If they are still learning or working on their first deal, do NOT say or hint that they bought a house.
+   f. Their why: helping people who want to buy a house (their first, or more than one) or who want to make money with this process, like the person they described. Their own reason must be about people and family, never about money for themselves or commissions.
+   g. A closing line or two that sets up wanting to share what they learned with others.
+6. Add exactly 2 chat moments on their own lines, worded like: "Type a 1 in the chat if you've ever felt that way." Put one right after the moment and one after the belief.
+7. You may add (pause) on its own line once, right after the hardest line.
+8. Do not promise results, income, or timelines to viewers. No guru talk. No hype words.
+9. Never say "creative financing," "subject-to," "seller financing," or any real estate jargon. Describe what the community teaches only as buying houses with little or no money down and no credit needed, or making money with this process.
+10. Never use em dashes or en dashes. Use periods or commas instead.
+11. Output ONLY the story text with blank lines between paragraphs. No title, no headings, no notes.`;
+}
+
+function clean(t){ return t.replace(/\s*[—–]\s*/g, ", ").replace(/,\s*,/g, ","); }
+
+function homePhrase(h){
+  return ({ "Renting":"renting", "Living with family":"living with family", "Staying with friends":"staying with friends",
+    "Living in my car or a shelter":"living in my car", "I owned a house, but it was hurting me":"stuck in a house that was hurting me" })[h] || "[where you were living]";
+}
+function statusLine(s){
+  return ({
+    "I bought a home with little or no money down":"And guess what? I bought a home. With little to no money down.",
+    "I’m making money with this process":"And now I’m making money with this process, and helping other people do the same.",
+    "I’m under contract or closing on a deal":"And right now, I’m under contract on a house. Me. The one who thought this wasn’t for people like me.",
+    "I’m learning and working on my first deal":"I’m not done yet. I’m learning every week and working on my first deal. But I finally know it’s possible.",
+    "I own a home and I’m working on buying more":"Now I’m working on buying more homes, so my family has real protection."
+  })[s] || "";
+}
+function template(){
+  const a = A, L = x => (x||"").trim();
+  const beliefs = (a.beliefs||[]).map(b=>b.toLowerCase()).join(", ");
+  return [
+    `Okay, so that’s how you find houses, and sellers who really want to sell. But can I be real with you guys for a minute?`,
+    L(a.zillow_feel) ? `Looking at houses like this takes me back. ${L(a.zillow_feel)}` : "",
+    `My name is ${L(a.name)}. Today, I’m ${L(a.now) || "[what you do now]"}. But it wasn’t always like this.`,
+    `Back in ${L(a.when) || "[when it was]"}, I was ${homePhrase(a.home)}. ${L(a.money)}`,
+    L(a.family) ? `${L(a.family)}` : "",
+    `I remember ${L(a.scene_where) || "[where you were]"}. ${L(a.scene_what)}`,
+    L(a.scene_senses),
+    L(a.scene_words) ? `And I said to myself, ${L(a.scene_words)}` : "",
+    `(pause)`,
+    `Type a 1 in the chat if you’ve ever felt that way.`,
+    `Back then I really believed ${beliefs || "[what you believed]"}. ${L(a.belief_own)}`,
+    `Type a 1 in the chat if you’ve ever believed that too.`,
+    L(a.turn), statusLine(a.status), L(a.proof),
+    `And that’s why I’m here tonight. I think about ${L(a.person) || "[the person you want to help]"}.`,
+    L(a.wish) ? `I wish somebody had told me back then: ${L(a.wish)}` : "",
+    `I don’t want anyone to feel the way I felt. So I want to share what I learned.`
+  ].filter(Boolean).join("\n\n");
+}
+
+function stats(){
+  const t = document.getElementById("story").value.trim();
+  const w = t ? t.split(/\s+/).length : 0;
+  const secs = Math.round(w / 135 * 60);
+  const m = Math.floor(secs/60), s = secs%60;
+  let note = "";
+  if (w && secs < 180) note = " That’s a little short. Add more detail to your moment.";
+  else if (secs > 330) note = " That’s a little long. Try cutting the parts before your moment.";
+  document.getElementById("stats").textContent = `${w} words, about ${m} min ${s} sec out loud.${note}`;
+}
+
+function wireMake(){
+  const honest = document.getElementById("honest"), gen = document.getElementById("gen");
+  const ready = A.name && A.scene_what && A.turn && (A.person || A.wish) && A.status;
+  honest.onchange = () => { A.honest = honest.checked; save(); gen.disabled = !(ready && A.honest); };
+  const story = document.getElementById("story");
+  story.addEventListener("input", () => { A.story = story.value; save(); stats(); });
+  if (A.story) stats();
+  document.getElementById("copy").onclick = async () => {
+    try { await navigator.clipboard.writeText(story.value); setStatus("Copied. Paste it in your notes app."); }
+    catch(e){ story.select(); setStatus("Select all and copy it from the box."); }
+  };
+  document.getElementById("stop").onclick = () => aborter?.abort();
+  gen.onclick = generate;
+}
+function setStatus(t){ const s = document.getElementById("status"); if (s) s.textContent = t; }
+
+function useTemplate(msg){
+  const story = document.getElementById("story");
+  A.story = template(); story.value = A.story; save();
+  document.getElementById("out").hidden = false; stats(); setStatus(msg);
+}
+
+async function generate(){
+  const gen = document.getElementById("gen"), stop = document.getElementById("stop");
+  const story = document.getElementById("story"), out = document.getElementById("out");
+  if (!sample) { useTemplate("Here’s a first draft built from your answers. Now edit it so it sounds like you. Fill in anything in [brackets]."); return; }
+  gen.disabled = true; stop.hidden = false; out.hidden = false;
+  story.value = ""; setStatus("Thinking about your story. This can take up to a minute…");
+  aborter = new AbortController();
+  try {
+    const { text } = await sample(prompt(), {
+      signal: aborter.signal, cache: false,
+      onText: ({text}) => { story.value = clean(text); setStatus("Writing…"); stats(); }
+    });
+    A.story = clean(text).trim(); story.value = A.story; save(); stats();
+    setStatus("Done. Read it out loud and change anything that doesn’t sound like you. Fill in anything in [brackets].");
+  } catch(e) {
+    if (e && e.text) { A.story = clean(e.text); story.value = A.story; save(); stats(); }
+    if (e?.code === "aborted" || aborter.signal.aborted) setStatus("Stopped. You can edit what’s there or write a new version.");
+    else if (e?.code === "not_granted") { sample = null; useTemplate("AI writing is off, so here’s a draft built from your answers. Edit it to sound like you."); }
+    else if (e?.code === "rate_limited") setStatus("Too many requests right now. Wait a minute, then try again.");
+    else useTemplate("The AI writer didn’t finish, so here’s a draft built from your answers. Edit it to sound like you.");
+  } finally {
+    gen.disabled = !(A.honest); gen.textContent = "Write a new version"; stop.hidden = true;
+  }
+}
+
+render();
+
+(async () => {
+  if (!window.claude || !window.claude.use) return;
+  try {
+    const [s, d] = await Promise.all([claude.use("sample"), claude.use("dictation")]);
+    sample = s || null; dict = d || null;
+    if (dict) {
+      dict.onFinal(({text}) => {
+        if (!micTarget || !text) return;
+        micTarget.value = (micTarget.value ? micTarget.value.trimEnd() + " " : "") + text.trim();
+        micTarget.dispatchEvent(new Event("input"));
+      });
+      dict.onState(({state}) => { if (state === "idle") resetMic(); });
+    }
+    if (STEPS[step].id !== "start") render();
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>
